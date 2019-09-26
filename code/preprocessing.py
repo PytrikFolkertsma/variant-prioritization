@@ -14,56 +14,92 @@ cadd_features = ['Ref', 'Alt', 'Type', 'Length', 'Consequence', 'GC', 'CpG', 'mo
 cadd_categorical_features = ['Domain', 'nAA', 'Ref', 'PolyPhenCat', 'Alt', 'oAA', 'SIFTcat', 'Segway', 'Dst2SplType', 'Type']
 cadd_numerical_features = list(set(cadd_features).difference(set(cadd_categorical_features)))
 
+features = ['#Chrom', 'Allergy/Immunology/Infectious', 'Alt', 'AnnoType', 'Audiologic/Otolaryngologic', 'Biochemical', 'CCDS', 'Cardiovascular', 'ConsDetail', 'ConsScore', 'Consequence', 'CpG', 'Craniofacial', 'Dental', 'Dermatologic', 'Dist2Mutation', 'EncExp', 'EncH3K27Ac', 'EncH3K4Me1', 'EncH3K4Me3', 'EncNucleo', 'Endocrine', 'Exon', 'FeatureID', 'Freq10000bp', 'Freq1000bp', 'Freq100bp', 'GC', 'Gastrointestinal', 'GeneID', 'GeneName', 'General', 'Genitourinary', 'GerpN', 'GerpS', 'Hematologic', 'Intron', 'Length', 'Musculoskeletal', 'Neurologic', 'Obstetric', 'Oncologic', 'Ophthalmologic', 'PHRED', 'Pos', 'Pulmonary', 'Rare10000bp', 'Rare1000bp', 'Rare100bp', 'RawScore', 'Ref', 'Renal', 'Segway', 'Sngl10000bp', 'Sngl1000bp', 'Sngl100bp', 'Stars', 'Type', 'allvalid', 'bStatistic', 'binarized_label', 'cHmmBivFlnk', 'cHmmEnh', 'cHmmEnhBiv', 'cHmmEnhG', 'cHmmHet', 'cHmmQuies', 'cHmmReprPC', 'cHmmReprPCWk', 'cHmmTssA', 'cHmmTssAFlnk', 'cHmmTssBiv', 'cHmmTx', 'cHmmTxFlnk', 'cHmmTxWk', 'cHmmZnfRpts', 'chr_pos_ref_alt', 'chr_pos_ref_alt_gene', 'clinpred', 'fathmm_score', 'inClinvar', 'inClinvar1Star', 'inClinvar2Star', 'inTest', 'inVKGLInsertion', 'inheritance', 'isAR', 'isInsertion', 'isPopulation', 'isVKGL_needsFurtherCorrection', 'label', 'mamPhCons', 'mamPhyloP', 'max_AF', 'minDistTSE', 'minDistTSS', 'motifEName', 'notinTest1', 'priPhCons', 'priPhyloP', 'provean', 'revel', 'sift', 'source', 'to_be_deleted', 'verPhCons', 'verPhyloP']
 
 def select_noncoding_variants(df):
 	pass
 
-def impute_missing_values(df):
-
+def drop_na_cols(df, na_ratio):
 	na_ratios_features = df[cadd_features].isnull().sum().divide(df.shape[0])
-	features_to_drop = na_ratios_features[na_ratios_features > 0.2].index
-
-	print('Dropping', len(features_to_drop), 'columns with more than 20% NA values.')
+	features_to_drop = na_ratios_features[na_ratios_features > na_ratio].index
+	print('Dropping {} columns with more than {}% NA values.'.format(len(features_to_drop), na_ratio*100))
 	df = df.drop(features_to_drop, axis=1)
-	print('Dropping rows with NA. (TODO: change this later to imputation).')
+	return df
+
+def drop_na_rows(df):
+	#TODO: change dropping to imputation
+	print('Dropping rows with NA values')
+	df = df.dropna(subset=set(df.columns).intersection(cadd_features), how='any')
+	return df
+
+def get_categorical_dummy_df(df, num_vars=10):
+	categorical_features = list(set(cadd_categorical_features).intersection(df.columns))
+	print('Converting {} from the {} categorical features to dummy variables: {}.'.format(len(categorical_features), len(cadd_categorical_features), categorical_features))
+	for feature in categorical_features:
+		counts = df[feature].value_counts()
+		if len(counts) > num_vars:
+			features = counts.index[:num_vars]
+		else:
+			features = counts.index
+		df[feature] = np.where(df[feature].isin(features), df[feature], "other")
+
+	dummies = pd.get_dummies(df[categorical_features], prefix=categorical_features)
+	print('Dummies DF shape:', dummies.shape)
+	return dummies
+
+def print_dataset_description(df):
+	print('Data has {} rows and {} columns. {} pathogenic variants ({}%)'.format(
+		df.shape[0], 
+		df.shape[1], 
+		df['label'].value_counts()['Pathogenic'], 
+		round(df['label'].value_counts()['Pathogenic']/df.shape[0]*100, 2))
+	)
+
+def run_preprocessing(path, convert_categorical_vars=True, drop_rows=True, trainset_cols=None, is_testset=False):
+	print('\nRunning preprocessing on', path)
+	df = pd.read_csv(path, sep='\t')
+
+	print_dataset_description(df)
 	
-	df = df.dropna(subset=set(df.columns).intersection(cadd_features))
-	print('Data has', df.shape[0], 'rows and', df.shape[1], 'columns.')
+	if not is_testset:
+		df = drop_na_cols(df, na_ratio=0.3)
 
+	if drop_rows:
+		df = drop_na_rows(df)
+
+	if convert_categorical_vars:
+		dummies = get_categorical_dummy_df(df, num_vars=10)
+		if is_testset:
+			#add missing dummy variables from trainset to testset with all values set on 0.
+			print('Adding missing dummy variables to testset...')
+			categorical_features_train = trainset_cols[[col.startswith(tuple([f + '_' for f in cadd_categorical_features])) for col in trainset_cols]].tolist()
+			categorical_dummies_not_in_testset = list(set(categorical_features_train).difference(dummies.columns))
+			categorical_features_zeros_df = pd.DataFrame(np.zeros(shape=(df.shape[0], len(categorical_dummies_not_in_testset))), columns=categorical_dummies_not_in_testset, index=df.index)
+			dummies = pd.concat([dummies, categorical_features_zeros_df], axis=1)
+			print('Dummies DF shape:', dummies.shape)
+		df = pd.concat([df, dummies], axis=1) 
+	else:
+		df = df.drop(list(set(cadd_categorical_features).intersection(df.columns)), axis=1)
+
+	print_dataset_description(df)
+	
 	return df
 
-	#for value in :
-#		print(df[value].isna().sum()) 
-
-def convert_categorical_features_to_dummies(df):
-	print('Converting the following categorical features to dummy variables:')
-	print(cadd_categorical_features)
-	print('(For now, drop them)')
-	df = df.drop(set(cadd_categorical_features).intersection(set(df.columns)), axis=1)
-	return df
-
-if __name__ == '__main__':
+def main():
 	if not (len(sys.argv) == 2 or len(sys.argv) == 3):
-		print('\nusage: preprocessing.py trainset [optional: testset]')
+		print('\nusage: preprocessing.py trainset testset]')
 		print('\nRuns preprocessing on given datasets. Saves the preprocessed data in the same directory as "inputfile_preprocessed.txt". Preprocessing steps: 1) converting categorical variables to dummy variables. 2) ...')
 		sys.exit()
 
-	datasets = sys.argv[1:]
-	for d in datasets:
-		print('\nRunning preprocessing on', d)
-		df = pd.read_csv(d, sep='\t')
-		print('\nData has', df.shape[0], 'rows and', df.shape[1], 'columns.')
-		#print(df.columns[80], df.columns[81], df.columns[82], df.columns[83])
+	trainset = run_preprocessing(sys.argv[1], convert_categorical_vars=False, drop_rows=False)
+	print('Saving trainset...')
+	trainset.to_csv(sys.argv[1][:-4] + '_preprocessed.txt', sep='\t', index=False)
+	testset = run_preprocessing(sys.argv[2], convert_categorical_vars=False, drop_rows=False, is_testset=True, trainset_cols=trainset.columns)
+	print('Saving testset...')	
+	testset.to_csv(sys.argv[2][:-4] + '_preprocessed.txt', sep='\t', index=False)
 
-		print('Imputing missing values...')
 
-		df = impute_missing_values(df)
-		df = convert_categorical_features_to_dummies(df)
+if __name__ == '__main__':
+	main()
 
-		print('Saving processed data...')
-		df.to_csv(d[:-4] + '_preprocessed.txt', sep='\t')
-
-	#parser = argparse.ArgumentParser()
-	#parser.add_argument("--trainset", dest="trainset", type=str)
-	#Input: train_set, test_set. 
-	#SAVE: train_nc_preprocessed, test_nc_preprocessed.
+	

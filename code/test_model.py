@@ -14,9 +14,17 @@ os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 
 def main():
+	# model = pickle.load(open("../model/test_model_lightgbm.pickle.dat", "rb"))
 	model = pickle.load(open("../model/test_model.pickle.dat", "rb"))
-	print('\n\nBOOSTER')
 	test = pd.read_csv('../data/test_nc_preprocessed.txt', sep='\t')
+
+	# for item in model.__dict__:
+	# 	print(item)
+	# 	print(model.__dict__[item])
+	# 	# print(model.best_estimator_.__dict__[item])
+	# # print(model)
+
+	# print(model.best_estimator_)
 
 	features = model._Booster.feature_names
 

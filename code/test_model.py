@@ -36,7 +36,7 @@ def main():
 	print('AUC SCORE:', auc_score)
 
 	fpr, tpr, thresholds = roc_curve(y_test, y_prob, pos_label='Pathogenic')
-	plt.plot(fpr, tpr,'r-',label = 'Pathogenic predictions')
+	plt.plot(fpr, tpr,'r-',label = 'XGBClassifier')
 	plt.plot([0,1],[0,1],'k-',label='random')
 	plt.plot([0,0,1,1],[0,1,1,1],'g-',label='perfect')
 	plt.legend()

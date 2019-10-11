@@ -62,7 +62,7 @@ def run_preprocessing(path, convert_categorical_vars=True, drop_rows=True, train
 	print_dataset_description(df)
 	
 	if not is_testset:
-		df = drop_na_cols(df, na_ratio=0.3)
+		df = drop_na_cols(df, na_ratio=0.5)
 
 	if drop_rows:
 		df = drop_na_rows(df)

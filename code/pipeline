@@ -1,6 +1,0 @@
-
-
-#Run preprocessing, trainset=data/train_nc.txt, testset=data/test_nc.txt.
-#Run training. Train model on train_nc_preprocessed. Save model
-#Run make predictions. Load model. Make predictions on test set. Write results to file.
-#Run evaluate. Compute ROC-AUC value of predictions. Input = which files to evaluate. 

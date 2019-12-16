@@ -1,0 +1,46 @@
+
+featureset
+	raw_trainset
+		AP=
+		ROC_AUC=
+		ROC_AUC_balanced_random=
+		ROC_AUC_balanced_nearmiss=
+		XXXX
+	SMOTE-k5-_trainset
+		AP=
+		ROC_AUC=
+		random=
+	SVM-SMOTE-k5-m10
+		xxx
+	BorderlineSMOTE-SMOTE-k5-m10
+		xxx
+
+featureset2
+	raw_trainset
+		AP=
+		ROC_AUC=
+		ROC_AUC_balanced_random=
+		ROC_AUC_balanced_nearmiss=
+		XXXX
+	SMOTE-k5-_trainset
+		AP=
+		ROC_AUC=
+		random=
+	SVM-SMOTE-k5-m10
+		xxx
+	BorderlineSMOTE-SMOTE-k5-m10
+		xxx
+
+
+featuresets = [{},{},{}]
+sampling = [{undersample=False, oversample=False},{undersample=False, oversample=True, k=10},{}
+
+for f in featuresets:
+	for s in sampling:
+
+
+oversample pathogenic variants
+undersample benign variants half size
+both 
+oversample pathogenic variants * 2
+

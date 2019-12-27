@@ -1,35 +1,54 @@
 
-featureset
-	raw_trainset
-		AP=
-		ROC_AUC=
-		ROC_AUC_balanced_random=
-		ROC_AUC_balanced_nearmiss=
-		XXXX
-	SMOTE-k5-_trainset
-		AP=
-		ROC_AUC=
-		random=
-	SVM-SMOTE-k5-m10
-		xxx
-	BorderlineSMOTE-SMOTE-k5-m10
-		xxx
 
-featureset2
-	raw_trainset
+
+
+
+
+
+training strategies:
+	raw training data
+	pathogenic variants oversampled 
+		size = original
+		size = * 2
+			benign_underampled = none
+			bening_undersampled = 0.5
+			benign_undersampled = 0.2
+		size = * 5
+		size = * 10
+
+
+
+
+featuresets = [[],[],[],[]]
+
+
+raw_trainset
+	featureset1
 		AP=
 		ROC_AUC=
 		ROC_AUC_balanced_random=
 		ROC_AUC_balanced_nearmiss=
 		XXXX
-	SMOTE-k5-_trainset
+	featureset2
 		AP=
 		ROC_AUC=
-		random=
-	SVM-SMOTE-k5-m10
-		xxx
-	BorderlineSMOTE-SMOTE-k5-m10
-		xxx
+		ROC_AUC_balanced_random=
+		ROC_AUC_balanced_nearmiss=
+		XXXX
+
+SMOTE-k5_trainset
+	featureset1
+		AP=
+		ROC_AUC=
+		ROC_AUC_balanced_random=
+		ROC_AUC_balanced_nearmiss=
+		XXXX
+	featureset2
+		AP=
+		ROC_AUC=
+		ROC_AUC_balanced_random=
+		ROC_AUC_balanced_nearmiss=
+		XXXX
 
 
 featuresets = [{},{},{}]
